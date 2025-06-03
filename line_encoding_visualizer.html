@@ -669,6 +669,46 @@
                 name: title,
                 yaxis: 'y1'
             };
+
+            // --- Annotations for all plots ---
+            const annotations = [];
+            // Clock annotations (top)
+            for (let i = 0; i < clock.length - 1; i++) {
+                annotations.push({
+                    x: i + 0.5,
+                    y: 1.15,
+                    text: String(clock[i]),
+                    showarrow: false,
+                    font: { size: 28, color: colors.text },
+                    xref: 'x',
+                    yref: 'y3'
+                });
+            }
+            // Input Data annotations (middle)
+            for (let i = 0; i < input.length - 1; i++) {
+                annotations.push({
+                    x: i + 0.5,
+                    y: 1.15,
+                    text: String(input[i]),
+                    showarrow: false,
+                    font: { size: 28, color: colors.text },
+                    xref: 'x',
+                    yref: 'y2'
+                });
+            }
+            // Encoded annotations (bottom)
+            for (let i = 0; i < encodedData.length - 1; i++) {
+                annotations.push({
+                    x: i + 0.5,
+                    y: Math.max(...encodedData) + 0.15,
+                    text: String(encodedData[i]),
+                    showarrow: false,
+                    font: { size: 28, color: colors.text },
+                    xref: 'x',
+                    yref: 'y1'
+                });
+            }
+            // --- End Annotations ---
             
             const layout = {
                 title: {
@@ -709,7 +749,8 @@
                     xanchor: 'center',
                     y: -0.1,
                     font: { color: colors.text }
-                }
+                },
+                annotations: annotations
             };
             
             Plotly.newPlot('singlePlot', [clockTrace, inputTrace, encodedTrace], layout, {
@@ -725,14 +766,14 @@
             const input = generateInputSignal(data);
             
             const encodings = [
-                { name: 'Unipolar NRZ', func: unipolar },
-                { name: 'Polar NRZ-L', func: nrz_l },
-                { name: 'Polar NRZ-I', func: nrz_i },
-                { name: 'Polar RZ', func: polar_rz },
-                { name: 'Biphase Manchester', func: manchester },
-                { name: 'Differential Manchester', func: diff_manchester },
-                { name: 'Bipolar AMI', func: ami },
-                { name: 'Bipolar Pseudoternary', func: pseudo }
+                { name: 'Unipolar', func: unipolar },
+                { name: 'NRZ-L', func: nrz_l },
+                { name: 'NRZ-I', func: nrz_i },
+                { name: 'RZ', func: polar_rz },
+                { name: 'Manchester', func: manchester },
+                { name: 'Diff Manchester', func: diff_manchester },
+                { name: 'AMI', func: ami },
+                { name: 'Pseudoternary', func: pseudo }
             ];
             
             // Create plot container
@@ -793,7 +834,6 @@
                 plot_bgcolor: colors.paper,
                 font: { color: colors.text, size: 10 },
                 xaxis: {
-                    title: 'Time',
                     gridcolor: colors.grid,
                     tickfont: { color: colors.text }
                 },
@@ -806,14 +846,18 @@
                 title: 'Clock',
                 domain: [0.92, 1],
                 gridcolor: colors.grid,
-                tickfont: { color: colors.text, size: 8 }
+                tickfont: { color: colors.text, size: 8 },
+                titlefont: { size: 12 },
+                title_standoff: 10
             };
             
             layout.yaxis2 = {
                 title: 'Input',
                 domain: [0.83, 0.91],
                 gridcolor: colors.grid,
-                tickfont: { color: colors.text, size: 8 }
+                tickfont: { color: colors.text, size: 8 },
+                titlefont: { size: 12 },
+                title_standoff: 10
             };
             
             encodings.forEach((encoding, i) => {
@@ -823,9 +867,64 @@
                     title: encoding.name,
                     domain: [bottom, top],
                     gridcolor: colors.grid,
-                    tickfont: { color: colors.text, size: 8 }
+                    tickfont: { color: colors.text, size: 8 },
+                    titlefont: { size: 12 },
+                    title_standoff: 10
                 };
             });
+            // --- Annotations for all subplots ---
+            const annotations = [];
+            // Clock annotations
+            for (let i = 0; i < clock.length - 1; i++) {
+                annotations.push({
+                    x: i + 0.5,
+                    y: 1.15,
+                    text: String(clock[i]),
+                    showarrow: false,
+                    font: { size: 22, color: colors.text },
+                    xref: 'x',
+                    yref: 'y1'
+                });
+            }
+            // Input annotations
+            for (let i = 0; i < input.length - 1; i++) {
+                annotations.push({
+                    x: i + 0.5,
+                    y: 1.15,
+                    text: String(input[i]),
+                    showarrow: false,
+                    font: { size: 22, color: colors.text },
+                    xref: 'x',
+                    yref: 'y2'
+                });
+            }
+            // Encoded annotations for each encoding
+            encodings.forEach((encoding, idx) => {
+                const encodedData = encoding.func(data);
+                for (let i = 0; i < encodedData.length - 1; i++) {
+                    annotations.push({
+                        x: i + 0.5,
+                        y: Math.max(...encodedData) + 0.15,
+                        text: String(encodedData[i]),
+                        showarrow: false,
+                        font: { size: 22, color: colors.text },
+                        xref: 'x',
+                        yref: `y${idx + 3}`
+                    });
+                }
+            });
+            layout.annotations = annotations;
+            // Add global x-axis label annotation at the bottom center
+            layout.annotations.push({
+                text: 'Time',
+                xref: 'paper',
+                yref: 'paper',
+                x: 0.5,
+                y: -0.08,
+                showarrow: false,
+                font: { size: 18, color: colors.text }
+            });
+            // --- End Annotations ---
             
             Plotly.newPlot('allPlots', traces, layout, {
                 responsive: true,
