@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Line Encoding Visualizer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #e2e8f0;
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --accent: #3182ce;
+            --accent-hover: #2c5282;
+            --border: #e2e8f0;
+            --success: #38a169;
+            --error: #e53e3e;
+            --shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a202c;
+            --bg-secondary: #2d3748;
+            --bg-tertiary: #4a5568;
+            --text-primary: #f7fafc;
+            --text-secondary: #e2e8f0;
+            --accent: #63b3ed;
+            --accent-hover: #4299e1;
+            --border: #4a5568;
+            --success: #68d391;
+            --error: #fc8181;
+            --shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 0;
+            background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+            border-radius: 20px;
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .controls {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            font-family: 'Courier New', monospace;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+        }
+
+        .input-field.error {
+            border-color: var(--error);
+            box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1);
+        }
+
+        .error-message {
+            color: var(--error);
+            font-size: 0.875rem;
+            margin-top: 5px;
+            font-weight: 500;
+        }
+
+        .encoding-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .encoding-btn {
+            padding: 15px 20px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .encoding-btn:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .encoding-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .theme-btn {
+            padding: 12px;
+            border: none;
+            border-radius: 50%;
+            background: var(--accent);
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+        }
+
+        .theme-btn:hover {
+            background: var(--accent-hover);
+            transform: scale(1.1);
+        }
+
+        .plot-container {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .visualization-title {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .encoding-buttons {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="theme-toggle">
+        <button class="theme-btn" onclick="toggleTheme()" title="Toggle Theme">
+            🌓
+        </button>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Line Encoding Visualizer</h1>
+            <p>Visualize different digital line encoding schemes used in data communication</p>
+        </div>
+
+        <div class="controls">
+            <div class="input-group">
+                <label for="binaryInput">Binary Sequence (max 128 bits):</label>
+                <input 
+                    type="text" 
+                    id="binaryInput" 
+                    class="input-field" 
+                    placeholder="Enter binary sequence (e.g., 101100101)"
+                    maxlength="128"
+                    oninput="validateInput(this)"
+                >
+                <div id="inputError" class="error-message"></div>
+            </div>
+
+            <div class="encoding-buttons">
+                <button class="encoding-btn" onclick="selectEncoding('unipolar')">Unipolar NRZ</button>
+                <button class="encoding-btn" onclick="selectEncoding('nrz_l')">Polar NRZ-L</button>
+                <button class="encoding-btn" onclick="selectEncoding('nrz_i')">Polar NRZ-I</button>
+                <button class="encoding-btn" onclick="selectEncoding('polar_rz')">Polar RZ</button>
+                <button class="encoding-btn" onclick="selectEncoding('manchester')">Biphase Manchester</button>
+                <button class="encoding-btn" onclick="selectEncoding('diff_manchester')">Differential Manchester</button>
+                <button class="encoding-btn" onclick="selectEncoding('ami')">Bipolar AMI</button>
+                <button class="encoding-btn" onclick="selectEncoding('pseudo')">Bipolar Pseudoternary</button>
+                <button class="encoding-btn" onclick="selectEncoding('all')" style="grid-column: 1 / -1; background: var(--success); color: white; border-color: var(--success);">Show All Encodings</button>
+            </div>
+        </div>
+
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-value" id="bitCount">0</div>
+                <div class="stat-label">Total Bits</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="oneCount">0</div>
+                <div class="stat-label">Ones Count</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="zeroCount">0</div>
+                <div class="stat-label">Zeros Count</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="dcComponent">0%</div>
+                <div class="stat-label">DC Component</div>
+            </div>
+        </div>
+
+        <div id="plotContainer"></div>
+    </div>
+
+    <script>
+        let currentTheme = 'light';
+        let currentEncoding = '';
+        let binaryData = [];
+
+        // Theme management
+        function toggleTheme() {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            
+            // Re-plot if there's data
+            if (binaryData.length > 0 && currentEncoding) {
+                plotEncoding(currentEncoding, binaryData);
+            }
+        }
+
+        // Input validation
+        function validateInput(input) {
+            const value = input.value;
+            const errorElement = document.getElementById('inputError');
+            const binaryRegex = /^[01]*$/;
+            
+            if (value === '') {
+                input.classList.remove('error');
+                errorElement.textContent = '';
+                document.getElementById('stats').style.display = 'none';
+                return;
+            }
+            
+            if (!binaryRegex.test(value)) {
+                input.classList.add('error');
+                errorElement.textContent = 'Please enter only binary digits (0 and 1)';
+                return;
+            }
+            
+            if (value.length > 128) {
+                input.classList.add('error');
+                errorElement.textContent = 'Maximum 128 bits allowed';
+                return;
+            }
+            
+            input.classList.remove('error');
+            errorElement.textContent = '';
+            
+            // Update binary data and stats
+            binaryData = value.split('').map(Number);
+            updateStats(binaryData);
+            
+            // Re-plot if encoding is selected
+            if (currentEncoding) {
+                plotEncoding(currentEncoding, binaryData);
+            }
+        }
+
+        // Update statistics
+        function updateStats(data) {
+            if (data.length === 0) {
+                document.getElementById('stats').style.display = 'none';
+                return;
+            }
+            
+            const oneCount = data.filter(bit => bit === 1).length;
+            const zeroCount = data.length - oneCount;
+            const dcComponent = Math.round((oneCount / data.length) * 100);
+            
+            document.getElementById('bitCount').textContent = data.length;
+            document.getElementById('oneCount').textContent = oneCount;
+            document.getElementById('zeroCount').textContent = zeroCount;
+            document.getElementById('dcComponent').textContent = dcComponent + '%';
+            document.getElementById('stats').style.display = 'grid';
+        }
+
+        // Encoding selection
+        function selectEncoding(encoding) {
+            const input = document.getElementById('binaryInput');
+            if (input.value === '' || input.classList.contains('error')) {
+                alert('Please enter a valid binary sequence first');
+                return;
+            }
+            
+            currentEncoding = encoding;
+            
+            // Update button states
+            document.querySelectorAll('.encoding-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            plotEncoding(encoding, binaryData);
+        }
+
+        // Encoding functions
+        function unipolar(b) {
+            const e = [...b];
+            e.push(e[e.length - 1]);
+            return e;
+        }
+
+        function nrz_l(b) {
+            const e = b.map(bit => bit === 0 ? -1 : 1);
+            e.push(e[e.length - 1]);
+            return e;
+        }
+
+        function nrz_i(b) {
+            const e = [...b];
+            for (let i = 0; i < b.length; i++) {
+                if (i === 0) {
+                    e[i] = b[i] === 1 ? -1 : 1;
+                } else {
+                    if (b[i] === 1) {
+                        e[i] = e[i-1] === -1 ? 1 : -1;
+                    } else {
+                        e[i] = e[i-1];
+                    }
+                }
+            }
+            e.push(e[e.length - 1]);
+            return e;
+        }
+
+        function polar_rz(b) {
+            const li = b.map(bit => bit === 0 ? -1 : 1);
+            const e = [];
+            for (let i = 0; i < b.length; i++) {
+                e.push(li[i]);
+                e.push(0);
+            }
+            e.push(e[e.length - 1]);
+            return e;
+        }
+
+        function manchester(b) {
+            const e = [];
+            for (let i = 0; i < b.length; i++) {
+                if (b[i] === 1) {
+                    e.push(-1);
+                    e.push(1);
+                } else {
+                    e.push(1);
+                    e.push(-1);
+                }
+            }
+            e.push(e[e.length - 1]);
+            return e;
+        }
+
+        function diff_manchester(b) {
+            const e = [];
+            for (let i = 0; i < b.length; i++) {
+                if (i === 0) {
+                    if (b[i] === 0) {
+                        e.push(-1);
+                        e.push(1);
+                    } else {
+                        e.push(1);
+                        e.push(-1);
+                    }
+                } else {
+                    if (b[i] === 1) {
+                        e.push(e[e.length - 1]);
+                        e.push(e[e.length - 1] === 1 ? -1 : 1);
+                    } else {
+                        if (e[e.length - 1] === -1) {
+                            e.push(1);
+                            e.push(-1);
+                        } else {
+                            e.push(-1);
+                            e.push(1);
+                        }
+                    }
+                }
+            }
+            e.push(e[e.length - 1]);
+            return e;
+        }
+
+        function ami(b) {
+            const e = [];
+            let flag = 0;
+            let first = true;
+            for (let i = 0; i < b.length; i++) {
+                if (b[i] === 0) {
+                    e.push(0);
+                } else {
+                    if (first) {
+                        e.push(1);
+                        flag = 1;
+                        first = false;
+                    } else {
+                        if (flag === 1) {
+                            e.push(-1);
+                            flag = 0;
+                        } else {
+                            e.push(1);
+                            flag = 1;
+                        }
+                    }
+                }
+            }
+            e.push(e[e.length - 1]);
+            return e;
+        }
+
+        function pseudo(b) {
+            const e = [];
+            let flag = 0;
+            let first = true;
+            for (let i = 0; i < b.length; i++) {
+                if (b[i] === 1) {
+                    e.push(0);
+                } else {
+                    if (first) {
+                        e.push(1);
+                        flag = 1;
+                        first = false;
+                    } else {
+                        if (flag === 1) {
+                            e.push(-1);
+                            flag = 0;
+                        } else {
+                            e.push(1);
+                            flag = 1;
+                        }
+                    }
+                }
+            }
+            e.push(e[e.length - 1]);
+            return e;
+        }
+
+        // Generate clock signal
+        function generateClock(size) {
+            const c = [];
+            for (let i = 0; i < 2 * size + 1; i++) {
+                c.push(i % 2 === 0 ? 1 : 0);
+            }
+            return c;
+        }
+
+        // Generate input signal for display
+        function generateInputSignal(b) {
+            const bout = [...b];
+            bout.push(bout[bout.length - 1]);
+            return bout;
+        }
+
+        // Generate X-axis values
+        function generateXAxis(length) {
+            return Array.from({length}, (_, i) => i);
+        }
+
+        // Get current theme colors
+        function getThemeColors() {
+            const isDark = currentTheme === 'dark';
+            return {
+                background: isDark ? '#1a202c' : '#ffffff',
+                paper: isDark ? '#2d3748' : '#f8fafc',
+                text: isDark ? '#f7fafc' : '#1a202c',
+                grid: isDark ? '#4a5568' : '#e2e8f0',
+                clock: isDark ? '#68d391' : '#2d3748',
+                input: '#e53e3e',
+                encoded: '#3182ce'
+            };
+        }
+
+        // Plot encoding
+        function plotEncoding(encoding, data) {
+            const colors = getThemeColors();
+            const clock = generateClock(data.length);
+            const input = generateInputSignal(data);
+            
+            let encodedData, encodedX;
+            let title = '';
+            
+            // Clear previous plots
+            document.getElementById('plotContainer').innerHTML = '';
+            
+            if (encoding === 'all') {
+                plotAllEncodings(data);
+                return;
+            }
+            
+            // Get encoded data based on selection
+            switch (encoding) {
+                case 'unipolar':
+                    encodedData = unipolar(data);
+                    title = 'Unipolar NRZ';
+                    break;
+                case 'nrz_l':
+                    encodedData = nrz_l(data);
+                    title = 'Polar NRZ-L';
+                    break;
+                case 'nrz_i':
+                    encodedData = nrz_i(data);
+                    title = 'Polar NRZ-I';
+                    break;
+                case 'polar_rz':
+                    encodedData = polar_rz(data);
+                    title = 'Polar RZ';
+                    break;
+                case 'manchester':
+                    encodedData = manchester(data);
+                    title = 'Biphase Manchester';
+                    break;
+                case 'diff_manchester':
+                    encodedData = diff_manchester(data);
+                    title = 'Differential Manchester';
+                    break;
+                case 'ami':
+                    encodedData = ami(data);
+                    title = 'Bipolar AMI';
+                    break;
+                case 'pseudo':
+                    encodedData = pseudo(data);
+                    title = 'Bipolar Pseudoternary';
+                    break;
+            }
+            
+            // Create plot container
+            const plotDiv = document.createElement('div');
+            plotDiv.className = 'plot-container';
+            plotDiv.innerHTML = `<div class="visualization-title">${title} Encoding</div><div id="singlePlot" style="height: 600px;"></div>`;
+            document.getElementById('plotContainer').appendChild(plotDiv);
+            
+            // Prepare traces
+            const clockTrace = {
+                x: generateXAxis(clock.length),
+                y: clock,
+                type: 'scatter',
+                mode: 'lines',
+                line: { shape: 'hv', color: colors.clock, width: 3 },
+                name: 'Clock',
+                yaxis: 'y3'
+            };
+            
+            const inputTrace = {
+                x: generateXAxis(input.length),
+                y: input,
+                type: 'scatter',
+                mode: 'lines',
+                line: { shape: 'hv', color: colors.input, width: 3 },
+                name: 'Input Data',
+                yaxis: 'y2'
+            };
+            
+            const encodedTrace = {
+                x: generateXAxis(encodedData.length),
+                y: encodedData,
+                type: 'scatter',
+                mode: 'lines',
+                line: { shape: 'hv', color: colors.encoded, width: 3 },
+                name: title,
+                yaxis: 'y1'
+            };
+            
+            const layout = {
+                title: {
+                    text: `${title} Line Encoding`,
+                    font: { size: 20, color: colors.text }
+                },
+                paper_bgcolor: colors.background,
+                plot_bgcolor: colors.paper,
+                font: { color: colors.text },
+                xaxis: {
+                    title: 'Time',
+                    gridcolor: colors.grid,
+                    tickfont: { color: colors.text }
+                },
+                yaxis: {
+                    title: title,
+                    domain: [0, 0.26],
+                    gridcolor: colors.grid,
+                    tickfont: { color: colors.text }
+                },
+                yaxis2: {
+                    title: 'Input Data',
+                    domain: [0.37, 0.63],
+                    gridcolor: colors.grid,
+                    tickfont: { color: colors.text }
+                },
+                yaxis3: {
+                    title: 'Clock',
+                    domain: [0.74, 1],
+                    gridcolor: colors.grid,
+                    tickfont: { color: colors.text }
+                },
+                margin: { l: 80, r: 50, t: 80, b: 50 },
+                showlegend: true,
+                legend: {
+                    orientation: 'h',
+                    x: 0.5,
+                    xanchor: 'center',
+                    y: -0.1,
+                    font: { color: colors.text }
+                }
+            };
+            
+            Plotly.newPlot('singlePlot', [clockTrace, inputTrace, encodedTrace], layout, {
+                responsive: true,
+                displayModeBar: false
+            });
+        }
+
+        // Plot all encodings
+        function plotAllEncodings(data) {
+            const colors = getThemeColors();
+            const clock = generateClock(data.length);
+            const input = generateInputSignal(data);
+            
+            const encodings = [
+                { name: 'Unipolar NRZ', func: unipolar },
+                { name: 'Polar NRZ-L', func: nrz_l },
+                { name: 'Polar NRZ-I', func: nrz_i },
+                { name: 'Polar RZ', func: polar_rz },
+                { name: 'Biphase Manchester', func: manchester },
+                { name: 'Differential Manchester', func: diff_manchester },
+                { name: 'Bipolar AMI', func: ami },
+                { name: 'Bipolar Pseudoternary', func: pseudo }
+            ];
+            
+            // Create plot container
+            const plotDiv = document.createElement('div');
+            plotDiv.className = 'plot-container';
+            plotDiv.innerHTML = `<div class="visualization-title">All Line Encoding Schemes</div><div id="allPlots" style="height: 1200px;"></div>`;
+            document.getElementById('plotContainer').appendChild(plotDiv);
+            
+            const traces = [];
+            const yDomains = [];
+            const step = 0.9 / (encodings.length + 2); // +2 for clock and input
+            
+            // Clock trace
+            traces.push({
+                x: generateXAxis(clock.length),
+                y: clock,
+                type: 'scatter',
+                mode: 'lines',
+                line: { shape: 'hv', color: colors.clock, width: 2 },
+                name: 'Clock',
+                yaxis: 'y1',
+                showlegend: false
+            });
+            
+            // Input trace
+            traces.push({
+                x: generateXAxis(input.length),
+                y: input,
+                type: 'scatter',
+                mode: 'lines',
+                line: { shape: 'hv', color: colors.input, width: 2 },
+                name: 'Input',
+                yaxis: 'y2',
+                showlegend: false
+            });
+            
+            // Encoding traces
+            encodings.forEach((encoding, i) => {
+                const encodedData = encoding.func(data);
+                traces.push({
+                    x: generateXAxis(encodedData.length),
+                    y: encodedData,
+                    type: 'scatter',
+                    mode: 'lines',
+                    line: { shape: 'hv', color: colors.encoded, width: 2 },
+                    name: encoding.name,
+                    yaxis: `y${i + 3}`,
+                    showlegend: false
+                });
+            });
+            
+            const layout = {
+                title: {
+                    text: 'All Line Encoding Schemes Comparison',
+                    font: { size: 20, color: colors.text }
+                },
+                paper_bgcolor: colors.background,
+                plot_bgcolor: colors.paper,
+                font: { color: colors.text, size: 10 },
+                xaxis: {
+                    title: 'Time',
+                    gridcolor: colors.grid,
+                    tickfont: { color: colors.text }
+                },
+                margin: { l: 120, r: 50, t: 80, b: 50 },
+                showlegend: false
+            };
+            
+            // Add y-axes for each subplot
+            layout.yaxis = {
+                title: 'Clock',
+                domain: [0.92, 1],
+                gridcolor: colors.grid,
+                tickfont: { color: colors.text, size: 8 }
+            };
+            
+            layout.yaxis2 = {
+                title: 'Input',
+                domain: [0.83, 0.91],
+                gridcolor: colors.grid,
+                tickfont: { color: colors.text, size: 8 }
+            };
+            
+            encodings.forEach((encoding, i) => {
+                const bottom = 0.74 - (i * 0.095);
+                const top = bottom + 0.08;
+                layout[`yaxis${i + 3}`] = {
+                    title: encoding.name,
+                    domain: [bottom, top],
+                    gridcolor: colors.grid,
+                    tickfont: { color: colors.text, size: 8 }
+                };
+            });
+            
+            Plotly.newPlot('allPlots', traces, layout, {
+                responsive: true,
+                displayModeBar: false
+            });
+        }
+
+        // Initialize with default values
+        document.getElementById('binaryInput').value = '101100101';
+        validateInput(document.getElementById('binaryInput'));
+    </script>
+</body>
+</html>
