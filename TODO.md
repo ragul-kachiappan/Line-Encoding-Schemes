@@ -1,0 +1,2 @@
+- [ ] uv, pre-commit
+- [ ] download as pdf option 
