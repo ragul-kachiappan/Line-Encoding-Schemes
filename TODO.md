@@ -1,2 +1,3 @@
-- [ ] uv, pre-commit
+- [x] uv, pre-commit
+- [ ] fix python implementation
 - [ ] download as pdf option 

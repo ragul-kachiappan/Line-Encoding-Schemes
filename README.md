@@ -12,10 +12,8 @@ Visualize and compare various digital line encoding schemes used in data communi
 
 **Preview:**
 
-<!-- Add screenshots of the HTML visualizer here -->
-
-![HTML Visualizer Screenshot 1](PLACEHOLDER_FOR_IMAGE_1)
-![HTML Visualizer Screenshot 2](PLACEHOLDER_FOR_IMAGE_2)
+![HTML Visualizer Screenshot 1](./assets/landing_page.png)
+![HTML Visualizer Screenshot 2](./assets/diagrams.png)
 
 ---
 

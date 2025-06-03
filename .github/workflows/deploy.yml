@@ -35,9 +35,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload only the HTML file and assets directory
-          path: |
-            line_encoding_visualizer.html
+          # Upload the web directory
+          path: './web'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4 
